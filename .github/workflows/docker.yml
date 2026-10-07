@@ -1,0 +1,26 @@
+name: Build Platform
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t my-replit-platform:latest .
+
+      - name: Test Node application
+        run: |
+          docker run -d --name platform-test -p 3000:3000 my-replit-platform:latest
+          sleep 5
+          curl --fail http://localhost:3000/api/health
+          docker logs platform-test
+          docker stop platform-test
