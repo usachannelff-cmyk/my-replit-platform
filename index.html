@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Replit Platform</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ background:#0d1117;
+ color:#e6edf3;
+ font-family:Arial,Helvetica,sans-serif;
+ height:100vh;
+ overflow:hidden
+}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+
+.app{
+ height:100vh;
+ display:flex;
+ flex-direction:column
+}
+
+.topbar{
+ height:58px;
+ background:#161b22;
+ border-bottom:1px solid #30363d;
+ display:flex;
+ align-items:center;
+ gap:12px;
+ padding:0 16px;
+ flex-shrink:0
+}
+
+.logo{
+ font-weight:800;
+ font-size:19px;
+ color:#fff;
+ white-space:nowrap
+}
+
+.badge{
+ background:#238636;
+ color:#fff;
+ font-size:11px;
+ padding:4px 7px;
+ border-radius:12px
+}
+
+.spacer{flex:1}
+
+.topbtn{
+ background:#21262d;
+ color:#e6edf3;
+ border:1px solid #30363d;
+ border-radius:7px;
+ padding:8px 12px
+}
+.topbtn:hover{background:#30363d}
+
+.workspace{
+ display:flex;
+ flex:1;
+ min-height:0
+}
+
+.sidebar{
+ width:230px;
+ background:#0d1117;
+ border-right:1px solid #30363d;
+ padding:14px 10px;
+ overflow:auto;
+ flex-shrink:0
+}
+
+.sidebar-title{
+ color:#8b949e;
+ font-size:12px;
+ text-transform:uppercase;
+ margin:10px 8px
+}
+
+.project{
+ display:flex;
+ align-items:center;
+ gap:9px;
+ padding:9px 10px;
+ border-radius:7px;
+ margin-bottom:3px;
+ cursor:pointer
+}
+.project:hover,.project.active{
+ background:#21262d
+}
+
+.newproject{
+ width:100%;
+ margin:8px 0 16px;
+ background:#238636;
+ border:0;
+ color:#fff;
+ padding:9px;
+ border-radius:7px;
+ font-weight:600
+}
+
+.main{
+ flex:1;
+ min-width:0;
+ display:flex;
+ flex-direction:column
+}
+
+.projectbar{
+ height:52px;
+ border-bottom:1px solid #30363d;
+ display:flex;
+ align-items:center;
+ padding:0 14px;
+ gap:10px
+}
+
+.projectname{font-weight:700}
+.branch{
+ color:#8b949e;
+ font-size:13px
+}
+
+.tabs{
+ display:flex;
+ gap:3px;
+ margin-left:20px
+}
+
+.tab{
+ border:0;
+ background:transparent;
+ color:#8b949e;
+ padding:9px 12px;
+ border-radius:6px
+}
+.tab.active,.tab:hover{
+ color:#fff;
+ background:#21262d
+}
+
+.content{
+ flex:1;
+ min-height:0;
+ display:flex
+}
+
+.files{
+ width:210px;
+ border-right:1px solid #30363d;
+ padding:12px;
+ overflow:auto;
+ flex-shrink:0
+}
+
+.file{
+ padding:8px 9px;
+ border-radius:6px;
+ color:#c9d1d9;
+ cursor:pointer;
+ font-size:14px
+}
+.file:hover,.file.selected{
+ background:#21262d;
+ color:#fff
+}
+
+.editorarea{
+ flex:1;
+ min-width:0;
+ display:flex;
+ flex-direction:column
+}
+
+.editorhead{
+ height:44px;
+ border-bottom:1px solid #30363d;
+ display:flex;
+ align-items:center;
+ padding:0 12px;
+ gap:10px;
+ background:#161b22
+}
+
+.editor{
+ flex:1;
+ min-height:0;
+ display:flex;
+ background:#0d1117
+}
+
+.lineNumbers{
+ width:48px;
+ padding:14px 8px;
+ text-align:right;
+ color:#484f58;
+ background:#0d1117;
+ font:13px/1.55 monospace;
+ overflow:hidden;
+ user-select:none
+}
+
+textarea{
+ flex:1;
+ border:0;
+ outline:0;
+ resize:none;
+ background:#0d1117;
+ color:#c9d1d9;
+ padding:14px 12px;
+ font:13px/1.55 monospace;
+ tab-size:2
+}
+
+.rightpanel{
+ width:330px;
+ border-left:1px solid #30363d;
+ display:flex;
+ flex-direction:column;
+ background:#0d1117;
+ flex-shrink:0
+}
+
+.panel{
+ border-bottom:1px solid #30363d;
+ padding:13px;
+ overflow:auto
+}
+
+.panel h3{
+ margin:0 0 10px;
+ font-size:14px
+}
+
+.ai-input{
+ display:flex;
+ gap:7px
+}
+
+.ai-input input{
+ min-width:0;
+ flex:1;
+ background:#0d1117;
+ color:#fff;
+ border:1px solid #30363d;
+ border-radius:6px;
+ padding:8px
+}
+
+.primary{
+ background:#238636;
+ color:#fff;
+ border:0;
+ border-radius:6px;
+ padding:8px 11px
+}
+
+.ai-response{
+ margin-top:10px;
+ background:#161b22;
+ border:1px solid #30363d;
+ border-radius:7px;
+ padding:10px;
+ font-size:13px;
+ line-height:1.5;
+ color:#c9d1d9;
+ min-height:60px
+}
+
+.terminal{
+ height:150px;
+ background:#010409;
+ border-top:1px solid #30363d;
+ padding:10px;
+ font:12px/1.5 monospace;
+ color:#8b949e;
+ overflow:auto
+}
+
+.term-green{color:#3fb950}
+.term-blue{color:#58a6ff}
+
+.preview{
+ position:absolute;
+ inset:80px 30px 30px;
+ background:#fff;
+ color:#111;
+ border-radius:10px;
+ border:1px solid #30363d;
+ display:none;
+ flex-direction:column;
+ overflow:hidden;
+ z-index:20
+}
+
+.previewhead{
+ height:44px;
+ background:#161b22;
+ color:#fff;
+ display:flex;
+ align-items:center;
+ padding:0 12px;
+ gap:10px
+}
+
+.previewbody{
+ flex:1;
+ padding:35px;
+ overflow:auto
+}
+
+.previewbody h1{font-size:40px;margin-top:0}
+.previewbody p{font-size:18px;color:#555;max-width:650px}
+
+.close{
+ margin-left:auto;
+ background:#da3633;
+ color:#fff;
+ border:0;
+ border-radius:6px;
+ padding:7px 11px
+}
+
+.status{
+ font-size:12px;
+ color:#8b949e
+}
+
+@media(max-width:950px){
+ .sidebar{width:180px}
+ .rightpanel{width:280px}
+ .files{width:170px}
+}
+
+@media(max-width:720px){
+ .sidebar{display:none}
+ .files{width:150px}
+ .rightpanel{display:none}
+ .tabs{margin-left:0}
+ .topbtn.hideMobile{display:none}
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<header class="topbar">
+  <div class="logo">⚡ My Replit Platform</div>
+  <span class="badge">BETA</span>
+
+  <div class="spacer"></div>
+
+  <button class="topbtn hideMobile" id="runTop">▶ Run</button>
+  <button class="topbtn" id="previewTop">Preview</button>
+  <button class="topbtn" id="saveTop">Save</button>
+</header>
+
+<div class="workspace">
+
+<aside class="sidebar">
+
+  <button class="newproject" id="newProject">＋ New Project</button>
+
+  <div class="sidebar-title">Projects</div>
+
+  <div class="project active">
+    <span>📁</span>
+    <span>my-replit-platform</span>
+  </div>
+
+  <div class="project">
+    <span>📁</span>
+    <span>hello-world</span>
+  </div>
+
+  <div class="project">
+    <span>📁</span>
+    <span>website-demo</span>
+  </div>
+
+  <div class="sidebar-title">Workspace</div>
+
+  <div class="project">
+    <span>⚙️</span>
+    <span>Settings</span>
+  </div>
+
+  <div class="project">
+    <span>🚀</span>
+    <span>Deployments</span>
+  </div>
+
+  <div class="project">
+    <span>📊</span>
+    <span>Analytics</span>
+  </div>
+
+</aside>
+
+<main class="main">
+
+  <div class="projectbar">
+    <span class="projectname">my-replit-platform</span>
+    <span class="branch">main</span>
+
+    <div class="tabs">
+      <button class="tab active">Code</button>
+      <button class="tab">Preview</button>
+      <button class="tab">Deploy</button>
+    </div>
+
+    <div class="spacer"></div>
+
+    <span class="status" id="saveStatus">Saved</span>
+  </div>
+
+  <div class="content">
+
+    <aside class="files">
+
+      <div class="sidebar-title">Files</div>
+
+      <div class="file selected" data-file="index.html">
+        📄 index.html
+      </div>
+
+      <div class="file" data-file="README.md">
+        📄 README.md
+      </div>
+
+      <div class="file" data-file="package.json">
+        📄 package.json
+      </div>
+
+      <div class="file" data-file=".gitignore">
+        📄 .gitignore
+      </div>
+
+      <div class="sidebar-title">Folders</div>
+
+      <div class="file">📁 src</div>
+      <div class="file">📁 public</div>
+      <div class="file">📁 components</div>
+
+    </aside>
+
+    <section class="editorarea">
+
+      <div class="editorhead">
+        <span>📄</span>
+        <strong id="currentFile">index.html</strong>
+
+        <div class="spacer"></div>
+
+        <button class="topbtn" id="formatBtn">Format</button>
+        <button class="topbtn" id="runBtn">▶ Run</button>
+      </div>
+
+      <div class="editor">
+
+        <div class="lineNumbers" id="lineNumbers">
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+        </div>
+
+        <textarea id="code" spellcheck="false"><!DOCTYPE html>
+<html>
+<head>
+  <title>My Project</title>
+</head>
+<body>
+
+  <h1>Hello from My Replit Platform 🚀</h1>
+
+  <p>Edit this code and press Run.</p>
+
+</body>
+</html></textarea>
+
+      </div>
+
+      <div class="terminal" id="terminal">
+        <div><span class="term-green">●</span> Terminal ready</div>
+        <div><span class="term-blue">$</span> waiting for command...</div>
+      </div>
+
+    </section>
+
+    <aside class="rightpanel">
+
+      <div class="panel">
+        <h3>🤖 AI Coding Assistant</h3>
+
+        <div class="ai-input">
+          <input
+            id="aiInput"
+            placeholder="Ask AI to build something..."
+          >
+          <button class="primary" id="askAI">Ask</button>
+        </div>
+
+        <div class="ai-response" id="aiResponse">
+          AI assistant ready.<br>
+          Try: <b>make a landing page</b>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>⚡ Quick Actions</h3>
+
+        <button class="topbtn" id="landingBtn">
+          Create Landing Page
+        </button>
+
+        <button class="topbtn" id="counterBtn">
+          Create Counter
+        </button>
+
+        <button class="topbtn" id="todoBtn">
+          Create Todo App
+        </button>
+      </div>
+
+      <div class="panel">
+        <h3>Project Status</h3>
+
+        <div class="status">GitHub: Connected</div>
+        <div class="status">Branch: main</div>
+        <div class="status">Editor: Ready</div>
+        <div class="status">Preview: Ready</div>
+        <div class="status">AI: Prototype</div>
+      </div>
+
+    </aside>
+
+  </div>
+</main>
+
+</div>
+
+<div class="preview" id="preview">
+
+  <div class="previewhead">
+    <span>🌐 Live Preview</span>
+    <span class="status">Local preview</span>
+    <button class="close" id="closePreview">Close</button>
+  </div>
+
+  <iframe
+    id="previewFrame"
+    style="flex:1;border:0;background:white"
+    title="Live preview">
+  </iframe>
+
+</div>
+
+</div>
+
+<script>
+const code = document.getElementById("code");
+const lineNumbers = document.getElementById("lineNumbers");
+const terminal = document.getElementById("terminal");
+const saveStatus = document.getElementById("saveStatus");
+const preview = document.getElementById("preview");
+const previewFrame = document.getElementById("previewFrame");
+const aiInput = document.getElementById("aiInput");
+const aiResponse = document.getElementById("aiResponse");
+
+function updateLines(){
+  const count = Math.max(1, code.value.split("\n").length);
+  let out = "";
+  for(let i=1;i<=count;i++) out += i + "\n";
+  lineNumbers.textContent = out;
+}
+
+function log(message, type=""){
+  const row = document.createElement("div");
+  if(type==="green"){
+    row.innerHTML = '<span class="term-green">●</span> '+message;
+  }else if(type==="blue"){
+    row.innerHTML = '<span class="term-blue">$</span> '+message;
+  }else{
+    row.textContent = message;
+  }
+  terminal.appendChild(row);
+  terminal.scrollTop = terminal.scrollHeight;
+}
+
+function save(){
+  saveStatus.textContent="Saving...";
+  setTimeout(()=>{
+    saveStatus.textContent="Saved";
+    log("Project changes saved locally.","green");
+  },400);
+}
+
+function run(){
+  log("npm-style project runner started.","blue");
+  log("Building project...");
+  setTimeout(()=>{
+    log("Build completed successfully.","green");
+    showPreview();
+  },500);
+}
+
+function showPreview(){
+  preview.style.display="flex";
+  const html=code.value;
+  const doc=previewFrame.contentDocument;
+  doc.open();
+  doc.write(html);
+  doc.close();
+}
+
+function askAI(){
+  const q=aiInput.value.trim();
+
+  if(!q){
+    aiResponse.textContent="Type a request first.";
+    return;
+  }
+
+  aiResponse.innerHTML=
+    "<b>AI Prototype</b><br><br>"+
+    "I received: <b>"+escapeHtml(q)+"</b><br><br>"+
+    "In the full version, this panel will connect to an AI model that can read the project files, modify code, explain errors and create complete features.";
+
+  log("AI request received: "+q,"blue");
+}
+
+function escapeHtml(text){
+  return text
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;");
+}
+
+function insertCode(newCode){
+  code.value=newCode;
+  updateLines();
+  saveStatus.textContent="Unsaved";
+  log("Code generated by quick action.");
+}
+
+document.getElementById("runBtn").addEventListener("click",run);
+document.getElementById("runTop").addEventListener("click",run);
+
+document.getElementById("previewTop").addEventListener("click",showPreview);
+
+document.getElementById("closePreview").addEventListener(
+  "click",
+  ()=>preview.style.display="none"
+);
+
+document.getElementById("saveTop").addEventListener("click",save);
+
+document.getElementById("askAI").addEventListener("click",askAI);
+
+aiInput.addEventListener("keydown",(e)=>{
+  if(e.key==="Enter") askAI();
+});
+
+code.addEventListener("input",()=>{
+  updateLines();
+  saveStatus.textContent="Unsaved";
+});
+
+document.getElementById("formatBtn").addEventListener("click",()=>{
+  log("Basic formatter executed.","green");
+  saveStatus.textContent="Unsaved";
+});
+
+document.getElementById("landingBtn").addEventListener("click",()=>{
+  insertCode(`<!DOCTYPE html>
+<html>
+<head>
+<title>My Landing Page</title>
+<style>
+body{
+font-family:Arial;
+margin:0;
+background:#111827;
+color:white;
+text-align:center;
+padding:100px 20px
+}
+button{
+padding:14px 25px;
+border:0;
+border-radius:8px;
+cursor:pointer
+}
+</style>
+</head>
+<body>
+<h1>Build Something Amazing 🚀</h1>
+<p>Created inside My Replit Platform.</p>
+<button>Get Started</button>
+</body>
+</html>`);
+});
+
+document.getElementById("counterBtn").addEventListener("click",()=>{
+  insertCode(`<!DOCTYPE html>
+<html>
+<body style="font-family:Arial;text-align:center;padding:80px">
+<h1>Counter</h1>
+<h2 id="n">0</h2>
+<button onclick="n.textContent=Number(n.textContent)+1">
++1
+</button>
+</body>
+</html>`);
+});
+
+document.getElementById("todoBtn").addEventListener("click",()=>{
+  insertCode(`<!DOCTYPE html>
+<html>
+<body style="font-family:Arial;padding:40px">
+<h1>Todo App</h1>
+<input id="task" placeholder="New task">
+<button onclick="add()">Add</button>
+<ul id="list"></ul>
+
+<script>
+function add(){
+ const x=document.getElementById("task");
+ if(!x.value.trim())return;
+ const li=document.createElement("li");
+ li.textContent=x.value;
+ document.getElementById("list").appendChild(li);
+ x.value="";
+}
+<\/script>
+</body>
+</html>`);
+});
+
+document.getElementById("newProject").addEventListener("click",()=>{
+  const name=prompt("New project name:");
+  if(name){
+    alert("Project '"+name+"' created in prototype. GitHub project creation will be connected in the backend version.");
+  }
+});
+
+document.querySelectorAll(".file").forEach(file=>{
+  file.addEventListener("click",()=>{
+    document.querySelectorAll(".file")
+      .forEach(x=>x.classList.remove("selected"));
+
+    file.classList.add("selected");
+
+    const name=file.dataset.file;
+
+    if(name){
+      document.getElementById("currentFile").textContent=name;
+
+      if(name==="README.md"){
+        code.value="# My Replit Platform\\n\\nAI-powered GitHub development platform.";
+      }
+
+      if(name==="package.json"){
+        code.value=`{
+  "name": "my-replit-platform",
+  "version": "0.1.0",
+  "private": true
+}`;
+      }
+
+      if(name===".gitignore"){
+        code.value="node_modules\\n.env\\n*.log";
+      }
+
+      updateLines();
+    }
+  });
+});
+
+updateLines();
+</script>
+
+</body>
+</html>
