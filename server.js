@@ -63,7 +63,6 @@ function githubConfigured() {
     GITHUB_TOKEN && GITHUB_OWNER && GITHUB_REPO
   );
 }
-
 async function githubRequest(url, options = {}) {
   if (!githubConfigured()) {
     throw new Error("GitHub environment variables are not configured");
@@ -87,9 +86,14 @@ async function githubRequest(url, options = {}) {
   }
 
   if (!response.ok) {
-    const message =
-      data?.message || `GitHub API error: ${response.status}`;
-    throw new Error(message);
+    const error = new Error(
+      data?.message || `GitHub API error: ${response.status}`
+    );
+
+    error.status = response.status;
+    error.githubResponse = data;
+
+    throw error;
   }
 
   return data;
@@ -132,17 +136,19 @@ app.get("/api/projects", async (req, res) => {
 
     res.json({ projects });
   } catch (error) {
-    if (error.message.includes("404")) {
-      return res.json({ projects: [] });
-    }
-
-    console.error(error);
+    console.error("GitHub projects error:", {
+      status: error.status ?? null,
+      message: error.message,
+      response: error.githubResponse ?? null
+    });
 
     res.status(500).json({
       error: "Unable to load projects from GitHub",
-      details: error.message
+      status: error.status ?? null,
+      details: error.message,
+      githubResponse: error.githubResponse ?? null
     });
-  }
+}
 });
 
 // Create a new project and persist it in GitHub
