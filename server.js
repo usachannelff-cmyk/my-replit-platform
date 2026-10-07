@@ -8,29 +8,34 @@ const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const GITHUB_OWNER = process.env.GITHUB_OWNER;
+const GITHUB_REPO = process.env.GITHUB_REPO;
+const GITHUB_BRANCH = "main";
+
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-// Serve the frontend
 app.use(express.static(__dirname));
 
-// Basic health check
 app.get("/api/health", (req, res) => {
   res.json({
     ok: true,
     platform: "My Replit Platform",
-    version: "0.1.0",
-    status: "running"
+    version: "0.2.0",
+    status: "running",
+    githubConfigured: Boolean(
+      GITHUB_TOKEN && GITHUB_OWNER && GITHUB_REPO
+    )
   });
 });
 
-// Platform information
 app.get("/api/info", (req, res) => {
   res.json({
     name: "My Replit Platform",
     description:
       "AI-powered, GitHub-based online coding and development platform",
-    branch: "main",
+    branch: GITHUB_BRANCH,
     features: [
       "Project management",
       "Online code editor",
@@ -38,27 +43,110 @@ app.get("/api/info", (req, res) => {
       "Live preview",
       "Terminal",
       "GitHub integration",
-      "Cloud deployment"
+      "Cloud deployment",
+      "GitHub project persistence"
     ]
   });
 });
 
-// Demo project list
-app.get("/api/projects", (req, res) => {
-  res.json({
-    projects: [
-      {
-        id: "my-replit-platform",
-        name: "my-replit-platform",
-        branch: "main",
-        status: "active"
-      }
-    ]
+function githubHeaders() {
+  return {
+    Authorization: `Bearer ${GITHUB_TOKEN}`,
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+    "Content-Type": "application/json"
+  };
+}
+
+function githubConfigured() {
+  return Boolean(
+    GITHUB_TOKEN && GITHUB_OWNER && GITHUB_REPO
+  );
+}
+
+async function githubRequest(url, options = {}) {
+  if (!githubConfigured()) {
+    throw new Error("GitHub environment variables are not configured");
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...githubHeaders(),
+      ...(options.headers || {})
+    }
   });
+
+  const text = await response.text();
+
+  let data;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { raw: text };
+  }
+
+  if (!response.ok) {
+    const message =
+      data?.message || `GitHub API error: ${response.status}`;
+    throw new Error(message);
+  }
+
+  return data;
+}
+
+function githubContentsUrl(filePath = "") {
+  const encodedPath = filePath
+    .split("/")
+    .map(encodeURIComponent)
+    .join("/");
+
+  return `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodedPath}`;
+}
+
+// Read project folders from GitHub
+app.get("/api/projects", async (req, res) => {
+  if (!githubConfigured()) {
+    return res.status(503).json({
+      error: "GitHub is not configured"
+    });
+  }
+
+  try {
+    const url = githubContentsUrl("projects");
+
+    const data = await githubRequest(
+      `${url}?ref=${encodeURIComponent(GITHUB_BRANCH)}`
+    );
+
+    const projects = Array.isArray(data)
+      ? data
+          .filter((item) => item.type === "dir")
+          .map((item) => ({
+            id: item.name,
+            name: item.name,
+            branch: GITHUB_BRANCH,
+            status: "active"
+          }))
+      : [];
+
+    res.json({ projects });
+  } catch (error) {
+    if (error.message.includes("404")) {
+      return res.json({ projects: [] });
+    }
+
+    console.error(error);
+
+    res.status(500).json({
+      error: "Unable to load projects from GitHub",
+      details: error.message
+    });
+  }
 });
 
-// Create-project API foundation
-app.post("/api/projects", (req, res) => {
+// Create a new project and persist it in GitHub
+app.post("/api/projects", async (req, res) => {
   const name = String(req.body?.name || "").trim();
 
   if (!name) {
@@ -74,21 +162,64 @@ app.post("/api/projects", (req, res) => {
     });
   }
 
-  res.status(201).json({
-    success: true,
-    project: {
-      id: name.toLowerCase(),
-      name,
-      branch: "main",
-      status: "created"
-    },
-    message:
-      "Project created in the platform API. GitHub persistence will be connected in the next backend stage."
-  });
+  if (!githubConfigured()) {
+    return res.status(503).json({
+      error: "GitHub is not configured"
+    });
+  }
+
+  try {
+    const filePath = `projects/${name}/README.md`;
+
+    const content = `# ${name}
+
+Created with My Replit Platform.
+
+- Project: ${name}
+- Branch: ${GITHUB_BRANCH}
+`;
+
+    const encodedContent = Buffer.from(content, "utf8").toString(
+      "base64"
+    );
+
+    const result = await githubRequest(
+      githubContentsUrl(filePath),
+      {
+        method: "PUT",
+        body: JSON.stringify({
+          message: `Create project ${name}`,
+          content: encodedContent,
+          branch: GITHUB_BRANCH
+        })
+      }
+    );
+
+    res.status(201).json({
+      success: true,
+      project: {
+        id: name.toLowerCase(),
+        name,
+        branch: GITHUB_BRANCH,
+        status: "created"
+      },
+      github: {
+        path: filePath,
+        commit: result.commit?.sha || null
+      },
+      message: "Project created and saved to GitHub."
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      error: "Unable to create project in GitHub",
+      details: error.message
+    });
+  }
 });
 
-// Simple AI endpoint placeholder.
-// This intentionally does NOT pretend that an AI model is connected.
+// AI endpoint
 app.post("/api/ai", (req, res) => {
   const prompt = String(req.body?.prompt || "").trim();
 
@@ -108,7 +239,7 @@ app.post("/api/ai", (req, res) => {
   });
 });
 
-// Run endpoint foundation
+// Run endpoint
 app.post("/api/run", (req, res) => {
   res.json({
     success: true,
@@ -119,7 +250,7 @@ app.post("/api/run", (req, res) => {
   });
 });
 
-// Deployment endpoint foundation
+// Deployment endpoint
 app.post("/api/deploy", (req, res) => {
   res.json({
     success: true,
@@ -130,19 +261,16 @@ app.post("/api/deploy", (req, res) => {
   });
 });
 
-// API 404 handler
 app.use("/api", (req, res) => {
   res.status(404).json({
     error: "API endpoint not found"
   });
 });
 
-// Frontend fallback
 app.get("/{*splat}", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// Error handler
 app.use((err, req, res, next) => {
   console.error(err);
 
